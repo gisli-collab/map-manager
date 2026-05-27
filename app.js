@@ -66,16 +66,32 @@ function rebuildSubSelector() {
   refreshViews();
 }
 
+function escapeAttr(value) {
+  return String(value).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
 function renderTree() {
   els.tree.innerHTML = '';
   const root = document.createElement('ul');
   for (const [main, subs] of Object.entries(subShelfMap)) {
     const li = document.createElement('li');
-    li.innerHTML = `<div class="category-line"><strong>${main}</strong><button class="delete-btn" data-main="${main}">Delete main</button></div>`;
+    const mainActive = main === state.selectedMain && !state.selectedSub ? ' active-category' : '';
+    li.innerHTML = `
+      <div class="category-line">
+        <button class="category-select main-select${mainActive}" type="button" data-main="${escapeAttr(main)}">
+          <strong>${main}</strong>
+        </button>
+        <button class="delete-btn" type="button" data-main="${escapeAttr(main)}">Delete main</button>
+      </div>`;
     const subUl = document.createElement('ul');
     Object.keys(subs).forEach((sub) => {
       const subLi = document.createElement('li');
-      subLi.innerHTML = `<div class="category-line">${sub}<button class="delete-btn" data-main="${main}" data-sub="${sub}">Delete sub</button></div>`;
+      const subActive = main === state.selectedMain && sub === state.selectedSub ? ' active-category' : '';
+      subLi.innerHTML = `
+        <div class="category-line">
+          <button class="category-select sub-select${subActive}" type="button" data-main="${escapeAttr(main)}" data-sub="${escapeAttr(sub)}">${sub}</button>
+          <button class="delete-btn" type="button" data-main="${escapeAttr(main)}" data-sub="${escapeAttr(sub)}">Delete sub</button>
+        </div>`;
       subUl.appendChild(subLi);
     });
     li.appendChild(subUl);
@@ -107,10 +123,20 @@ function refreshDots() {
   }
 }
 
+function refreshTreeSelection() {
+  document.querySelectorAll('.category-select.active-category').forEach((el) => el.classList.remove('active-category'));
+  const selected = state.selectedSub
+    ? `.category-select[data-main="${CSS.escape(state.selectedMain)}"][data-sub="${CSS.escape(state.selectedSub)}"]`
+    : `.category-select[data-main="${CSS.escape(state.selectedMain)}"]:not([data-sub])`;
+  const item = els.tree.querySelector(selected);
+  if (item) item.classList.add('active-category');
+}
+
 function refreshViews() {
   const dots = getSelectedSubCodes();
   els.subDots.textContent = JSON.stringify({ main: state.selectedMain, sub: state.selectedSub, dots }, null, 2);
   refreshDots();
+  refreshTreeSelection();
   if (state.selectedDot) {
     const rev = codeToSubcategoriesMap();
     const items = rev[state.selectedDot.id] || [];
@@ -147,6 +173,20 @@ function renderStoreDots() {
     els.map.appendChild(button);
     state.dotButtons.set(dot.id, button);
   });
+}
+
+function chooseCategory(main, sub = '') {
+  if (!subShelfMap[main]) return;
+  const subs = Object.keys(subShelfMap[main]);
+  state.selectedMain = main;
+  state.selectedSub = sub && subShelfMap[main][sub] !== undefined ? sub : (subs[0] || '');
+  els.assignMain.value = state.selectedMain;
+  els.assignSub.innerHTML = subs.map((s) => `<option>${s}</option>`).join('');
+  els.assignSub.value = state.selectedSub;
+  refreshViews();
+  els.status.textContent = state.selectedSub
+    ? `Showing dots for ${state.selectedMain} > ${state.selectedSub}`
+    : `Selected ${state.selectedMain}. Add or choose a sub-category to assign dots.`;
 }
 
 function formatCategoryCode() {
@@ -258,6 +298,12 @@ els.subForm.addEventListener('submit', (e) => {
 });
 
 els.tree.addEventListener('click', (e) => {
+  const selectBtn = e.target.closest('.category-select');
+  if (selectBtn) {
+    chooseCategory(selectBtn.dataset.main, selectBtn.dataset.sub || '');
+    return;
+  }
+
   const btn = e.target.closest('.delete-btn');
   if (!btn) return;
   const main = btn.dataset.main;
