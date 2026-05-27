@@ -42,6 +42,8 @@ const els = {
   mainForm: document.getElementById('main-category-form'), mainInput: document.getElementById('main-category-input'),
   subForm: document.getElementById('sub-category-form'), subInput: document.getElementById('sub-category-input'), subMainSelect: document.getElementById('sub-main-select'),
   assignMain: document.getElementById('assign-main'), assignSub: document.getElementById('assign-sub'),
+  codeArea: document.getElementById('category-code'), importCode: document.getElementById('import-code'),
+  exportCode: document.getElementById('export-code'), codeStatus: document.getElementById('code-status'),
 };
 
 function rebuildSelectors() {
@@ -147,6 +149,95 @@ function renderStoreDots() {
   });
 }
 
+function formatCategoryCode() {
+  return `const subShelfMap = ${JSON.stringify(subShelfMap, null, 2)};`;
+}
+
+function cleanImportText(raw) {
+  let text = raw.trim();
+  text = text.replace(/^const\s+subShelfMap\s*=\s*/i, '');
+  text = text.replace(/^let\s+subShelfMap\s*=\s*/i, '');
+  text = text.replace(/^var\s+subShelfMap\s*=\s*/i, '');
+  if (text.endsWith(';')) text = text.slice(0, -1).trim();
+  if (!text.startsWith('{')) text = `{${text}`;
+  if (!text.endsWith('}')) text = `${text}}`;
+  return text.replace(/,\s*([}\]])/g, '$1');
+}
+
+function normalizeImportedMap(imported) {
+  if (!imported || typeof imported !== 'object' || Array.isArray(imported)) {
+    throw new Error('Imported code must be an object of main categories.');
+  }
+
+  const normalized = {};
+  for (const [main, subs] of Object.entries(imported)) {
+    if (!subs || typeof subs !== 'object' || Array.isArray(subs)) {
+      throw new Error(`Category "${main}" must contain sub-categories.`);
+    }
+    normalized[main] = {};
+    for (const [sub, dots] of Object.entries(subs)) {
+      const rawDots = Array.isArray(dots) ? dots.join(',') : String(dots ?? '');
+      normalized[main][sub] = csv(norm(rawDots));
+    }
+  }
+  return normalized;
+}
+
+function replaceSubShelfMap(nextMap) {
+  Object.keys(subShelfMap).forEach((key) => delete subShelfMap[key]);
+  Object.assign(subShelfMap, nextMap);
+}
+
+function countSubcategories(map) {
+  return Object.values(map).reduce((total, subs) => total + Object.keys(subs).length, 0);
+}
+
+function getUnknownImportedDots(map) {
+  const known = new Set(STORE_DOTS.map((dot) => dot.id));
+  const unknown = new Set();
+  for (const subs of Object.values(map)) {
+    for (const dotsCsv of Object.values(subs)) {
+      for (const dotId of norm(dotsCsv)) {
+        if (!known.has(dotId)) unknown.add(dotId);
+      }
+    }
+  }
+  return [...unknown].sort();
+}
+
+function importCategoryCode() {
+  try {
+    const raw = els.codeArea.value.trim();
+    if (!raw) {
+      els.codeStatus.textContent = 'Paste category code before importing.';
+      return;
+    }
+
+    const parsed = JSON.parse(cleanImportText(raw));
+    const nextMap = normalizeImportedMap(parsed);
+    replaceSubShelfMap(nextMap);
+    state.selectedMain = Object.keys(subShelfMap)[0] || '';
+    state.selectedSub = '';
+    renderTree();
+    rebuildSelectors();
+
+    const unknown = getUnknownImportedDots(nextMap);
+    const baseMessage = `Imported ${Object.keys(nextMap).length} main categories and ${countSubcategories(nextMap)} sub-categories.`;
+    els.codeStatus.textContent = unknown.length
+      ? `${baseMessage} Unknown dot codes kept: ${unknown.join(', ')}`
+      : baseMessage;
+  } catch (error) {
+    els.codeStatus.textContent = `Could not import code: ${error.message}`;
+  }
+}
+
+function exportCategoryCode() {
+  els.codeArea.value = formatCategoryCode();
+  els.codeArea.focus();
+  els.codeArea.select();
+  els.codeStatus.textContent = `Exported ${Object.keys(subShelfMap).length} main categories and ${countSubcategories(subShelfMap)} sub-categories.`;
+}
+
 els.mainForm.addEventListener('submit', (e) => {
   e.preventDefault();
   const name = els.mainInput.value.trim();
@@ -178,6 +269,8 @@ els.tree.addEventListener('click', (e) => {
 
 els.assignMain.addEventListener('change', rebuildSubSelector);
 els.assignSub.addEventListener('change', () => { state.selectedSub = els.assignSub.value; refreshViews(); });
+els.importCode.addEventListener('click', importCategoryCode);
+els.exportCode.addEventListener('click', exportCategoryCode);
 
 renderStoreDots();
 renderTree();

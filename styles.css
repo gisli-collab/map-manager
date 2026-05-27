@@ -37,3 +37,32 @@ button { cursor: pointer; }
   .layout { grid-template-columns: 1fr; }
   .store-map { max-width: 100%; }
 }
+
+.code-tools {
+  margin-top: 18px;
+  padding-top: 14px;
+  border-top: 1px solid #ddd;
+}
+.helper-text {
+  margin: 0 0 8px;
+  color: #555;
+  font-size: 14px;
+}
+.code-area {
+  width: 100%;
+  min-height: 220px;
+  box-sizing: border-box;
+  padding: 10px;
+  border: 1px solid #bbb;
+  border-radius: 6px;
+  font-family: Consolas, Monaco, monospace;
+  font-size: 13px;
+  line-height: 1.45;
+  resize: vertical;
+}
+.button-row {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+  flex-wrap: wrap;
+}
