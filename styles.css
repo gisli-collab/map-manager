@@ -14,7 +14,20 @@ button { cursor: pointer; }
 .controls { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 8px; }
 .controls label { display: flex; flex-direction: column; gap: 6px; }
 .status { margin: 8px 0 12px; color: #333; }
-.store-map { position: relative; height: 720px; border: 1px solid #bbb; border-radius: 8px; background: #dfdfdf; overflow: hidden; }
+.store-map {
+  position: relative;
+  width: 100%;
+  max-width: 780px;
+  aspect-ratio: 1153 / 1536;
+  border: 1px solid #bbb;
+  border-radius: 8px;
+  background-color: #dfdfdf;
+  background-image: url('store-map.png');
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: 100% 100%;
+  overflow: hidden;
+}
 .map-dot { position: absolute; width: 14px; height: 14px; border-radius: 50%; background: #e51616; border: 2px solid #fff; transform: translate(-50%, -50%); cursor: pointer; }
 .map-dot.active { box-shadow: 0 0 0 3px #00000055; }
 .map-dot.bound { background: #1d9e4e; }
@@ -22,5 +35,5 @@ button { cursor: pointer; }
 
 @media (max-width: 980px) {
   .layout { grid-template-columns: 1fr; }
-  .store-map { height: 560px; }
+  .store-map { max-width: 100%; }
 }
