@@ -189,8 +189,34 @@ function chooseCategory(main, sub = '') {
     : `Selected ${state.selectedMain}. Add or choose a sub-category to assign dots.`;
 }
 
+function getExportableSubShelfMap() {
+  const existingDots = new Set(STORE_DOTS.map((dot) => dot.id));
+  const exportMap = {};
+
+  for (const [main, subs] of Object.entries(subShelfMap)) {
+    exportMap[main] = {};
+    for (const [sub, dotsCsv] of Object.entries(subs)) {
+      const validDots = norm(dotsCsv).filter((dotId) => existingDots.has(dotId));
+      exportMap[main][sub] = csv(validDots);
+    }
+  }
+
+  return exportMap;
+}
+
+function countDots(map) {
+  let total = 0;
+  for (const subs of Object.values(map)) {
+    for (const dotsCsv of Object.values(subs)) {
+      total += norm(dotsCsv).length;
+    }
+  }
+  return total;
+}
+
 function formatCategoryCode() {
-  return `const subShelfMap = ${JSON.stringify(subShelfMap, null, 2)};`;
+  const exportMap = getExportableSubShelfMap();
+  return `const subShelfMap = ${JSON.stringify(exportMap, null, 2)};`;
 }
 
 function cleanImportText(raw) {
@@ -272,10 +298,16 @@ function importCategoryCode() {
 }
 
 function exportCategoryCode() {
+  const exportMap = getExportableSubShelfMap();
   els.codeArea.value = formatCategoryCode();
   els.codeArea.focus();
   els.codeArea.select();
-  els.codeStatus.textContent = `Exported ${Object.keys(subShelfMap).length} main categories and ${countSubcategories(subShelfMap)} sub-categories.`;
+
+  const removed = countDots(subShelfMap) - countDots(exportMap);
+  const baseMessage = `Exported ${Object.keys(exportMap).length} main categories and ${countSubcategories(exportMap)} sub-categories with ${countDots(exportMap)} existing dot assignments.`;
+  els.codeStatus.textContent = removed > 0
+    ? `${baseMessage} Removed ${removed} dot assignment${removed === 1 ? '' : 's'} that do not exist on the map.`
+    : baseMessage;
 }
 
 els.mainForm.addEventListener('submit', (e) => {
