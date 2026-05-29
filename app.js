@@ -1,7 +1,7 @@
 let STORE_DOTS = [];
 let currentMapImageSrc = '';
 
-const MAP_STORAGE_KEY = 'map-manager-v1.6-map';
+const MAP_STORAGE_KEY = 'map-manager-v1.7-map';
 
 const subShelfMap = {
   'Kaffi og te': { Kaffi: 'A100,A200', Te: 'A100,A200', 'Heitt súkkulaði': 'A100,A200' },
@@ -174,6 +174,7 @@ function renderStoreDots() {
     button.type = 'button';
     button.className = 'map-dot';
     button.title = dot.id;
+    button.dataset.dotId = dot.id;
     button.setAttribute('aria-label', `Select store location ${dot.id}`);
     button.style.left = `${dot.x}%`;
     button.style.top = `${dot.y}%`;
@@ -195,7 +196,7 @@ function normalizeImportedDots(dots) {
   const seen = new Set();
 
   dots.forEach((dot, index) => {
-    const id = String(dot?.id || '').trim().toUpperCase();
+    const id = String(dot?.id ?? dot?.name ?? dot?.label ?? dot?.code ?? dot?.title ?? '').trim().toUpperCase();
     const x = Number(dot?.x);
     const y = Number(dot?.y);
 
@@ -289,12 +290,50 @@ function parseCoordinatesText(text) {
   return normalizeImportedDots(parseJavaScriptLiteral(arrayText));
 }
 
+function parsePercentStyleValue(value) {
+  const match = String(value || '').match(/(-?\d+(?:\.\d+)?)%/);
+  return match ? Number(match[1]) : NaN;
+}
+
+function extractDotsFromHtmlDom(doc) {
+  const dotElements = [...doc.querySelectorAll('.dot, .map-dot, [data-dot-id], [data-id]')];
+  const dots = [];
+
+  dotElements.forEach((el, index) => {
+    const id = String(
+      el.getAttribute('data-dot-id') ||
+      el.getAttribute('data-id') ||
+      el.getAttribute('title') ||
+      el.getAttribute('aria-label') ||
+      el.textContent ||
+      ''
+    ).replace(/^Select store location\s+/i, '').trim();
+
+    const style = el.getAttribute('style') || '';
+    const leftMatch = style.match(/left\s*:\s*(-?\d+(?:\.\d+)?)%/i);
+    const topMatch = style.match(/top\s*:\s*(-?\d+(?:\.\d+)?)%/i);
+    const x = leftMatch ? Number(leftMatch[1]) : parsePercentStyleValue(el.style?.left);
+    const y = topMatch ? Number(topMatch[1]) : parsePercentStyleValue(el.style?.top);
+
+    if (id && Number.isFinite(x) && Number.isFinite(y)) dots.push({ id, x, y });
+  });
+
+  if (!dots.length) throw new Error('No dot coordinates found in the HTML file.');
+  return normalizeImportedDots(dots);
+}
+
 function parseMapHtml(html) {
   const doc = new DOMParser().parseFromString(html, 'text/html');
   const img = doc.querySelector('.stage img') || doc.querySelector('img[src^="data:image"]') || doc.querySelector('img');
   if (!img || !img.getAttribute('src')) throw new Error('No map image found in the HTML file.');
 
-  const dots = parseCoordinatesText(html);
+  let dots;
+  try {
+    dots = parseCoordinatesText(html);
+  } catch (arrayError) {
+    dots = extractDotsFromHtmlDom(doc);
+  }
+
   return { imageSrc: img.getAttribute('src'), dots };
 }
 

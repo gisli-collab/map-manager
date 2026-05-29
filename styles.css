@@ -132,3 +132,26 @@ button { cursor: pointer; }
 @media (max-width: 720px) {
   .file-grid { grid-template-columns: 1fr; }
 }
+
+.map-dot::after {
+  content: attr(data-dot-id);
+  position: absolute;
+  left: 50%;
+  top: -8px;
+  transform: translate(-50%, -100%);
+  padding: 2px 5px;
+  border-radius: 4px;
+  background: rgba(17, 24, 39, .92);
+  color: #fff;
+  font-size: 11px;
+  line-height: 1.1;
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity .12s ease;
+}
+.map-dot:hover::after,
+.map-dot:focus-visible::after,
+.map-dot.active::after {
+  opacity: 1;
+}

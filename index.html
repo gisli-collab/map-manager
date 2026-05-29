@@ -53,6 +53,16 @@
         <h3>Subcategories on selected dot</h3>
         <ul id="dot-subcategories"></ul>
 
+        <section class="code-tools" aria-label="Import and export category code">
+          <h3>Import / Export Code</h3>
+          <p class="helper-text">Paste category code here to import it, or export the current category map as code. Export only includes dot codes that exist on the current uploaded map.</p>
+          <textarea id="category-code" class="code-area" spellcheck="false" placeholder="Paste category code here..."></textarea>
+          <div class="button-row">
+            <button id="import-code" type="button">Import Code</button>
+            <button id="export-code" type="button">Export Code</button>
+          </div>
+          <p id="code-status" class="status"></p>
+        </section>
         <section class="map-file-tools" aria-label="Import map files">
           <h3>Import / Change Map</h3>
           <p class="helper-text">Preferred: upload a complete HTML map file like <code>bonus-grandi-final.html</code>. The app extracts the embedded PNG and dot coordinates automatically.</p>
@@ -79,16 +89,6 @@
           <p id="map-file-status" class="status"></p>
         </section>
 
-        <section class="code-tools" aria-label="Import and export category code">
-          <h3>Import / Export Code</h3>
-          <p class="helper-text">Paste category code here to import it, or export the current category map as code. Export only includes dot codes that exist on the current uploaded map.</p>
-          <textarea id="category-code" class="code-area" spellcheck="false" placeholder="Paste category code here..."></textarea>
-          <div class="button-row">
-            <button id="import-code" type="button">Import Code</button>
-            <button id="export-code" type="button">Export Code</button>
-          </div>
-          <p id="code-status" class="status"></p>
-        </section>
       </section>
     </main>
 
