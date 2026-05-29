@@ -9,7 +9,7 @@
   <body>
     <header>
       <h1>Map Manager</h1>
-      <p>Manage main categories, sub-categories, and map shelf dot assignments.</p>
+      <p>Manage main categories, sub-categories, map images, and shelf dot assignments.</p>
     </header>
 
     <main class="layout">
@@ -43,9 +43,9 @@
           </label>
         </div>
 
-        <p id="map-status" class="status">Select a sub-category and click map dots.</p>
+        <p id="map-status" class="status">Upload a map file or PNG plus dot coordinates to begin.</p>
 
-        <div id="store-map" class="store-map" aria-label="Store map"></div>
+        <div id="store-map" class="store-map empty" aria-label="Store map"></div>
 
         <h3>Current selected sub-category dot codes</h3>
         <pre id="selected-sub-dots" class="json-box"></pre>
@@ -53,9 +53,35 @@
         <h3>Subcategories on selected dot</h3>
         <ul id="dot-subcategories"></ul>
 
+        <section class="map-file-tools" aria-label="Import map files">
+          <h3>Import / Change Map</h3>
+          <p class="helper-text">Preferred: upload a complete HTML map file like <code>bonus-grandi-final.html</code>. The app extracts the embedded PNG and dot coordinates automatically.</p>
+          <label class="file-label">
+            Complete HTML map file
+            <input id="map-file-input" type="file" accept=".html,.htm,text/html" />
+          </label>
+
+          <p class="helper-text">Or upload the PNG map and dot-overlay coordinates separately. Coordinate files can be JSON or JS with <code>const dots = [...]</code> or <code>const STORE_DOTS = [...]</code>.</p>
+          <div class="file-grid">
+            <label class="file-label">
+              PNG map image
+              <input id="png-map-input" type="file" accept="image/png,.png" />
+            </label>
+            <label class="file-label">
+              Dot-overlay coordinates
+              <input id="dot-coordinates-input" type="file" accept=".json,.js,.txt,application/json,text/javascript,text/plain" />
+            </label>
+          </div>
+
+          <div class="button-row">
+            <button id="clear-map" type="button">Clear Map</button>
+          </div>
+          <p id="map-file-status" class="status"></p>
+        </section>
+
         <section class="code-tools" aria-label="Import and export category code">
           <h3>Import / Export Code</h3>
-          <p class="helper-text">Paste category code here to import it, or export the current category map as code. Export only includes dot codes that exist on the map.</p>
+          <p class="helper-text">Paste category code here to import it, or export the current category map as code. Export only includes dot codes that exist on the current uploaded map.</p>
           <textarea id="category-code" class="code-area" spellcheck="false" placeholder="Paste category code here..."></textarea>
           <div class="button-row">
             <button id="import-code" type="button">Import Code</button>
